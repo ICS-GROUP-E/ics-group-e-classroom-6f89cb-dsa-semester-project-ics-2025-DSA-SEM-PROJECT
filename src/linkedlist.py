@@ -21,3 +21,6 @@ class StudentLinkedList:
 
     def display_all(self):
         pass    #Placeholder
+
+    def display_all(self):
+        pass    #Placeholder
