@@ -90,7 +90,7 @@ class LibraryApp:
             ("The Catcher in the Rye", "J.D. Salinger", "777"),
             ("Brave New World", "Aldous Huxley", "888"),
             ("The Lord of the Rings", "J.R.R. Tolkien", "999"),
-            ("Animal Farm", "George Orwell", "1010")
+            ("Animal Farm", "George Orwell", "1011")
         ]
 
         # Main container frame
