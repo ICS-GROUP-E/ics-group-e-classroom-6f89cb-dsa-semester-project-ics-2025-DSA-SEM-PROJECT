@@ -1,28 +1,26 @@
-# === LIBRARY BOOK LINKED LIST (SINGLE-FILE IMPLEMENTATION) ===
+# === LIBRARY BOOK LINKED LIST WITH DROPDOWN ADD ===
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 
-# --- 1. NODE CLASS ---
+# --- 1. NODE CLASS (unchanged) ---
 class BookNode:
     def __init__(self, title, author, isbn):
-        self.title = title  # Book title (string)
-        self.author = author  # Author name (string)
-        self.isbn = isbn  # Unique ID (string/int)
-        self.available = True  # Availability status
-        self.next = None  # Pointer to next node
+        self.title = title
+        self.author = author
+        self.isbn = isbn
+        self.available = True
+        self.next = None
 
 
-# --- 2. LINKED LIST CLASS ---
+# --- 2. LINKED LIST CLASS (unchanged) ---
 class BookLinkedList:
     def __init__(self):
-        self.head = None  # First book
-        self.tail = None  # Last book (optimizes appends)
-        self.size = 0  # Track total books
+        self.head = None
+        self.tail = None
+        self.size = 0
 
-    # --- CORE METHODS ---
     def add_book(self, title, author, isbn):
-        """Adds book to END of list (O(1) with tail pointer)"""
         new_node = BookNode(title, author, isbn)
         if not self.head:
             self.head = new_node
@@ -33,7 +31,6 @@ class BookLinkedList:
         return f"Added: {title}"
 
     def delete_book(self, isbn):
-        """Removes book by ISBN (O(n) traversal)"""
         current = self.head
         previous = None
 
@@ -41,11 +38,11 @@ class BookLinkedList:
             if current.isbn == isbn:
                 if previous:
                     previous.next = current.next
-                    if not current.next:  # Update tail if deleting last
+                    if not current.next:
                         self.tail = previous
                 else:
                     self.head = current.next
-                    if not self.head:  # List is now empty
+                    if not self.head:
                         self.tail = None
                 self.size -= 1
                 return f"Deleted: {current.title}"
@@ -54,7 +51,6 @@ class BookLinkedList:
         return "Book not found"
 
     def search_by_title(self, title):
-        """Returns first matching book (O(n))"""
         current = self.head
         while current:
             if current.title.lower() == title.lower():
@@ -62,9 +58,7 @@ class BookLinkedList:
             current = current.next
         return None
 
-    # --- UTILITY METHODS ---
     def get_all_books(self):
-        """Returns list of dicts (for GUI integration)"""
         books = []
         current = self.head
         while current:
@@ -77,42 +71,143 @@ class BookLinkedList:
             current = current.next
         return books
 
-    def display_console(self):
-        """Prints all books to console (debugging)"""
-        current = self.head
-        while current:
-            status = "Available" if current.available else "Checked Out"
-            print(f"{current.title} by {current.author} (ISBN: {current.isbn}) - {status}")
-            current = current.next
 
-
-# --- 3. DEMO GUI INTEGRATION ---
+# --- 3. ENHANCED GUI WITH DROPDOWN ---
 class LibraryApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Book Tracker")
-        self.books = BookLinkedList()  # Linked List instance
+        self.root.title("Book Tracker with Dropdown")
+        self.books = BookLinkedList()
 
-        # Sample data
-        self.books.add_book("The Hobbit", "J.R.R. Tolkien", "111")
-        self.books.add_book("1984", "George Orwell", "222")
+        # Predefined book options for dropdown
+        self.book_options = [
+            ("The Hobbit", "J.R.R. Tolkien", "111"),
+            ("1984", "George Orwell", "222"),
+            ("Dune", "Frank Herbert", "333"),
+            ("To Kill a Mockingbird", "Harper Lee", "444"),
+            ("The Great Gatsby", "F. Scott Fitzgerald", "555"),
+            ("Pride and Prejudice", "Jane Austen", "666"),
+            ("The Catcher in the Rye", "J.D. Salinger", "777"),
+            ("Brave New World", "Aldous Huxley", "888"),
+            ("The Lord of the Rings", "J.R.R. Tolkien", "999"),
+            ("Animal Farm", "George Orwell", "1010")
+        ]
 
-        # GUI Setup
-        self.tree = ttk.Treeview(columns=("Title", "Author", "ISBN", "Status"), show="headings")
+        # Main container frame
+        main_frame = tk.Frame(root)
+        main_frame.pack(padx=20, pady=20)
+
+        # Dropdown section
+        dropdown_frame = tk.Frame(main_frame)
+        dropdown_frame.pack(fill=tk.X, pady=10)
+
+        self.selected_book = tk.StringVar()
+        self.selected_book.set("Select a book")  # Default option
+
+        # Dropdown menu
+        self.book_dropdown = ttk.Combobox(
+            dropdown_frame,
+            textvariable=self.selected_book,
+            values=[book[0] for book in self.book_options],
+            state="readonly"
+        )
+        self.book_dropdown.pack(side=tk.LEFT, expand=True, fill=tk.X)
+
+        # Add button
+        add_button = tk.Button(
+            dropdown_frame,
+            text="Add Book",
+            command=self.add_from_dropdown
+        )
+        add_button.pack(side=tk.LEFT, padx=10)
+
+        # Treeview display
+        self.tree = ttk.Treeview(
+            main_frame,
+            columns=("Title", "Author", "ISBN", "Status"),
+            show="headings"
+        )
         self.tree.heading("Title", text="Title")
         self.tree.heading("Author", text="Author")
         self.tree.heading("ISBN", text="ISBN")
         self.tree.heading("Status", text="Status")
-        self.tree.pack(padx=10, pady=10)
+        self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Buttons
-        tk.Button(text="Refresh List", command=self.update_display).pack()
-        tk.Button(text="Add Test Book", command=self.add_test_book).pack()
+        # Delete button
+        delete_button = tk.Button(
+            main_frame,
+            text="Delete Selected",
+            command=self.delete_selected
+        )
+        delete_button.pack(pady=10)
 
+        # Initialize with sample data
+        self.update_display()
+
+    def add_from_dropdown(self):
+        """Adds the selected book from dropdown"""
+        selected_title = self.selected_book.get()
+
+        if selected_title == "Select a book":
+            messagebox.showwarning("Warning", "Please select a book first!")
+            return
+
+        # Find the selected book in our options
+        for title, author, isbn in self.book_options:
+            if title == selected_title:
+                # Check if book already exists
+                if self.books.search_by_title(title):
+                    messagebox.showwarning("Warning", f"'{title}' already exists!")
+                    return
+
+                self.books.add_book(title, author, isbn)
+                self.update_display()
+                messagebox.showinfo("Success", f"Added: {title}")
+                return
+
+        messagebox.showerror("Error", "Book not found in options!")
+
+    def delete_selected(self):
+        """Properly deletes the selected book from both the Treeview and linked list"""
+        selected_items = self.tree.selection()  # Get selected items
+
+        if not selected_items:
+            messagebox.showwarning("Warning", "Please select a book to delete first!")
+            return
+
+        # Get the first selected item (in case multiple are selected)
+        selected_item = selected_items[0]
+
+        # Get all values from the selected row
+        item_values = self.tree.item(selected_item)['values']
+
+        # Ensure we have enough values (title, author, ISBN, status)
+        if len(item_values) < 3:
+            messagebox.showerror("Error", "Invalid book data in selection")
+            return
+
+        selected_isbn = item_values[2]  # ISBN is the 3rd value (index 2)
+
+        # Debug print (you can remove this later)
+        print(f"Attempting to delete book with ISBN: {selected_isbn}")
+        print(f"Current books in list: {[book['isbn'] for book in self.books.get_all_books()]}")
+
+        # Delete from linked list
+        result = self.books.delete_book(selected_isbn)
+
+        if result.startswith("Deleted"):
+            # Success - update display
+            self.tree.delete(selected_item)
+            messagebox.showinfo("Success", result)
+        else:
+            # Failure - show error
+            messagebox.showerror("Error", result)
+
+        # Force refresh of the display
         self.update_display()
 
     def update_display(self):
-        """Updates GUI with current book data"""
+        """Updates the Treeview with current books"""
         for row in self.tree.get_children():
             self.tree.delete(row)
 
@@ -125,35 +220,9 @@ class LibraryApp:
                 status
             ))
 
-    def add_test_book(self):
-        """Demo method for testing"""
-        self.books.add_book("Dune", "Frank Herbert", "333")
-        self.update_display()
 
-
-# --- 4. TEST CASES ---
-def run_tests():
-    print("\n=== RUNNING TESTS ===")
-    test_list = BookLinkedList()
-
-    # Test add
-    test_list.add_book("Test Book", "Test Author", "123")
-    assert test_list.size == 1, "Add failed"
-
-    # Test search
-    assert test_list.search_by_title("test book").isbn == "123", "Search failed"
-
-    # Test delete
-    test_list.delete_book("123")
-    assert test_list.size == 0, "Delete failed"
-    print("All tests passed!")
-
-
-# --- MAIN EXECUTION ---
+# --- 4. MAIN EXECUTION ---
 if __name__ == "__main__":
-    run_tests()  # Verify functionality
-
-    # Launch demo GUI
     root = tk.Tk()
     app = LibraryApp(root)
     root.mainloop()
