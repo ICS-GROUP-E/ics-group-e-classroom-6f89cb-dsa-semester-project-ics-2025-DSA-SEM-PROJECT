@@ -1,68 +1,73 @@
 # Storing available medicine using dictionaries and using sets to prevent duplicate entries.
 
-
-import json
+import sqlite3
 import os
 
 class Pharmacy:
-    def __init__(self, data_file="data/inventory.json"):
-        self.data_file = data_file
-        self.medicine_inventory = {}  
-        self.medicine_names = set()   
-        self.load_data()
+    def __init__(self, db_file="data/hospital.db"):
+        
+        os.makedirs(os.path.dirname(db_file), exist_ok=True)
+
+        
+        self.conn = sqlite3.connect(db_file)
+        self.cur = self.conn.cursor()
+        self.init_db()
+
+    def init_db(self):
+        self.cur.execute("""
+            CREATE TABLE IF NOT EXISTS medicines (
+                name TEXT PRIMARY KEY,
+                stock INTEGER NOT NULL CHECK(stock >= 0),
+                price REAL NOT NULL CHECK(price >= 0)
+            )
+        """)
+        self.conn.commit()
 
     def add_medicine(self, name, stock, price):
         name = name.strip().capitalize()
-        if name in self.medicine_names:
+        try:
+            self.cur.execute("INSERT INTO medicines (name, stock, price) VALUES (?, ?, ?)", (name, stock, price))
+            self.conn.commit()
+            return f"{name} added successfully."
+        except sqlite3.IntegrityError:
             return f"{name} already exists."
-        self.medicine_inventory[name] = {"stock": stock, "price": price}
-        self.medicine_names.add(name)
-        self.save_data()
-        return f"{name} added successfully."
 
     def update_medicine(self, name, stock=None, price=None):
         name = name.strip().capitalize()
-        if name not in self.medicine_inventory:
+        self.cur.execute("SELECT * FROM medicines WHERE name = ?", (name,))
+        if not self.cur.fetchone():
             return f"{name} not found."
-        if stock is not None:
-            self.medicine_inventory[name]["stock"] = stock
-        if price is not None:
-            self.medicine_inventory[name]["price"] = price
-        self.save_data()
+
+        if stock is not None and price is not None:
+            self.cur.execute("UPDATE medicines SET stock = ?, price = ? WHERE name = ?", (stock, price, name))
+        elif stock is not None:
+            self.cur.execute("UPDATE medicines SET stock = ? WHERE name = ?", (stock, name))
+        elif price is not None:
+            self.cur.execute("UPDATE medicines SET price = ? WHERE name = ?", (price, name))
+
+        self.conn.commit()
         return f"{name} updated."
 
     def delete_medicine(self, name):
         name = name.strip().capitalize()
-        if name in self.medicine_inventory:
-            del self.medicine_inventory[name]
-            self.medicine_names.remove(name)
-            self.save_data()
-            return f"{name} removed."
-        return f"{name} not found."
+        self.cur.execute("DELETE FROM medicines WHERE name = ?", (name,))
+        self.conn.commit()
+        if self.cur.rowcount == 0:
+            return f"{name} not found."
+        return f"{name} removed."
 
     def search_medicine(self, name):
         name = name.strip().capitalize()
-        return self.medicine_inventory.get(name, None)
+        self.cur.execute("SELECT stock, price FROM medicines WHERE name = ?", (name,))
+        row = self.cur.fetchone()
+        if row:
+            return {"stock": row[0], "price": row[1]}
+        return None
 
     def get_all_medicines(self):
-        return self.medicine_inventory
+        self.cur.execute("SELECT name, stock, price FROM medicines ORDER BY name ASC")
+        rows = self.cur.fetchall()
+        return {name: {"stock": stock, "price": price} for name, stock, price in rows}
 
-    def save_data(self):
-        os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
-        with open(self.data_file, "w") as f:
-            json.dump(self.medicine_inventory, f, indent=4)
-
-    def load_data(self):
-        if os.path.exists(self.data_file):
-            with open(self.data_file, "r") as f:
-                self.medicine_inventory = json.load(f)
-                self.medicine_names = set(self.medicine_inventory.keys())
-
-
-# if __name__ =="__main__":
-#     ph = Pharmacy()
-
-# # print(ph.add_medicine("Panadol", 50, 20))
-# print(ph.update_medicine("Panadol", stock=60))
-# # print(ph.search_medicine("Panadol"))
-# # print(ph.delete_medicine("Panadol"))
+    def __del__(self):
+        self.conn.close()
