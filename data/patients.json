@@ -1,0 +1,37 @@
+[
+  {
+    "id": "P001",
+    "name": "John Omollo",
+    "age": 34,
+    "condition": "Recovery",
+    "status": "Admitted"
+  },
+  {
+    "id": "P002",
+    "name": "Jane Smith",
+    "age": 29,
+    "condition": "Observation",
+    "status": "Admitted"
+  },
+  {
+    "id": "P003",
+    "name": "Ali Mwangi",
+    "age": 41,
+    "condition": "Physiotherapy",
+    "status": "Admitted"
+  },
+  {
+    "id": "P004",
+    "name": "Maria Kamau",
+    "age": 36,
+    "condition": "Cardiology",
+    "status": "Admitted"
+  },
+  {
+    "id": "P005",
+    "name": "Kevin Otieno",
+    "age": 50,
+    "condition": "Surgery Recovery",
+    "status": "Admitted"
+  }
+]
