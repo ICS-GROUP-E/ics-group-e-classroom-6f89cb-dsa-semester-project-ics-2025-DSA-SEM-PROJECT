@@ -5,7 +5,7 @@ class StudentDatabase:
     def __init__(self, db_name="students.db"):
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
-        # ✅ Create the students table if it doesn't exist
+
         self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS students (
                 id TEXT PRIMARY KEY,
@@ -18,7 +18,7 @@ class StudentDatabase:
         self.conn.commit()
 
     def add(self, student):
-        # ✅ Insert or update student record
+
         self.cursor.execute(
             "INSERT OR REPLACE INTO students (id, name, course, year, gpa) VALUES (?, ?, ?, ?, ?)",
             (student.student_id, student.name, student.course, student.year, student.gpa)
@@ -26,7 +26,7 @@ class StudentDatabase:
         self.conn.commit()
 
     def remove(self, student_id):
-        # ✅ Delete student by ID
+
         self.cursor.execute(
             "DELETE FROM students WHERE id = ?",
             (student_id,)
@@ -34,7 +34,7 @@ class StudentDatabase:
         self.conn.commit()
 
     def get(self, student_id):
-        # ✅ Retrieve a student by ID
+
         self.cursor.execute(
             "SELECT * FROM students WHERE id = ?",
             (student_id,)
@@ -45,6 +45,6 @@ class StudentDatabase:
         return None
 
     def list_all(self):
-        # ✅ Return all students
+
         self.cursor.execute("SELECT * FROM students")
         return self.cursor.fetchall()
