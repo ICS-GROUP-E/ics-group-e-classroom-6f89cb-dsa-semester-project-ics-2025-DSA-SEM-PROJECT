@@ -18,7 +18,7 @@ class TestActionStack(unittest.TestCase):
     def test_push(self):
         self.stack.push("delete", self.student)
         self.assertEqual(len(self.stack.stack), 1)
-        self.assertEqual(self.stack.stack[-1][1].name, "Derrick")  # ✅ Match test data
+        self.assertEqual(self.stack.stack[-1][1].name, "Derrick")
 
     def test_pop(self):
         self.stack.push("delete", self.student)
