@@ -103,6 +103,7 @@ def update_medicine():
 
     success = medicine_list.update_node(name, quantity, price, expiry)
 
+
     if success:
 
         try:
