@@ -1,0 +1,14 @@
+{
+    "Panadol": {
+        "stock": 60,
+        "price": 20
+    },
+    "Ventolin": {
+        "stock": 40,
+        "price": 350.0
+    },
+    "Paracetamol": {
+        "stock": 40,
+        "price": 10.0
+    }
+}
