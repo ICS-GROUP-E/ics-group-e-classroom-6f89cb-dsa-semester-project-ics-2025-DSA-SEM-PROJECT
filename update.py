@@ -12,6 +12,7 @@ conn = mysql.connector.connect(
     database='medicines'
 )
 
+
 # Linked List Node
 class MedicineNode:
     def __init__(self, name, quantity, price, expiry):
