@@ -1,6 +1,15 @@
 import tkinter as tk
 from tkinter import messagebox
-import sqlite3
+import mysql.connector
+
+conn = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="",
+    database="medicines"
+)
+cursor = db.cursor()
+
 
 # Stack for undo
 deleted_stack = []
