@@ -64,7 +64,7 @@ class MedicineLinkedList:
         conn.commit()
         cursor.close()
 
-# Create the linked list and load data
+
 medicine_list = MedicineLinkedList()
 medicine_list.load_from_database()
 
@@ -73,7 +73,7 @@ root = tk.Tk()
 root.title("Update Medicine")
 root.geometry("400x300")
 
-# Entry Fields
+
 tk.Label(root, text="Medicine Name").pack()
 name_entry = tk.Entry(root)
 name_entry.pack()
@@ -100,11 +100,11 @@ def update_medicine():
         messagebox.showwarning("Input Error", "Please fill all fields")
         return
 
-    # Try to update in Linked List
+
     success = medicine_list.update_node(name, quantity, price, expiry)
 
     if success:
-        # If successful, update the database
+
         try:
             medicine_list.update_database(name, quantity, price, expiry)
             messagebox.showinfo("Success", "Medicine updated successfully!")
