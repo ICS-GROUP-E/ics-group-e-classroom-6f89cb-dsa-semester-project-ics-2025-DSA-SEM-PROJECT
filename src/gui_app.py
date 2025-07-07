@@ -112,6 +112,7 @@ class GuiApp:
 
          # Populate the tree with tasks
          for task in tasks:
+             if task is None: continue # Skip if a task is None
              values = (
                  task.task_id,
                  task.description,
@@ -120,7 +121,8 @@ class GuiApp:
                  task.status,
                  task.created_at.strftime("%Y-%m-%d %H:%M:%S")  # Format datetime for display
              )
-             self.tree.insert(" ", tk.END, values=values)
+             # Use the task's unique ID as the item ID (iid) and insert into the root ("")
+             self.tree.insert("", tk.END, iid=task.task_id, values=values)
          self.update_status(f"Displaying {len(tasks)} tasks.")
 
     def update_status(self, message):
@@ -155,9 +157,8 @@ class GuiApp:
         if not selected_items:
             messagebox.showwarning("Warning", "Please select a task first.")
             return None
-        selected_item = selected_items[0]
-        task_id = self.tree.item(selected_item, "values")[0]
-        return task_id
+        # The 'selection()' method returns the iid of the selected item
+        return selected_items[0]
 
     def _delete_selected_task(self):
         """Handles the 'Delete Selected' button click."""
