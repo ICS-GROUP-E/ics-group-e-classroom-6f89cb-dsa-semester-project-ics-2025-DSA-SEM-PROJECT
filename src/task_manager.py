@@ -23,7 +23,7 @@ class TaskManager:
         self.tasks_bst = BinarySearchTree()
         self.undo_stack = Stack()
 
-        # Placeholder for the database handler, to be connected in Stage 3.
+        # Placeholder for the database handler.
         self.db_handler = None
         print("TaskManager initialized.")
 
@@ -51,7 +51,7 @@ class TaskManager:
     def _resync_aux_structures(self):
         """
         Private helper method to rebuild the PQ and BST from the HashTable.
-        This is the safest way to ensure consistency after updates or deletions.
+        This ensures consistency after any modification.
         """
         # Clear existing data
         self.tasks_pq.clear()
@@ -67,9 +67,13 @@ class TaskManager:
 
     def create_task(self, description, priority, difficulty):
         """
-        Creates a new task and adds it to all relevant data structures.
+        Creates a new task, adds it to all data structures, and logs the action.
         """
         task = Task(description=description, priority=priority, difficulty=difficulty)
+
+        # Push the 'create' action to the undo stack
+        undo_data = {'action': 'create', 'task_id': task.task_id}
+        self.undo_stack.push(undo_data)
 
         # 1. Add to primary storage
         self.tasks_ht.insert(task.task_id, task)
@@ -91,7 +95,7 @@ class TaskManager:
 
     def update_task(self, task_id, new_description=None, new_priority=None, new_difficulty=None, new_status=None):
         """
-        Updates an existing task's properties.
+        Updates an existing task's properties and logs the action.
         """
         task = self.get_task(task_id)
         if not task:
@@ -108,9 +112,7 @@ class TaskManager:
         if new_difficulty is not None: task.difficulty = int(new_difficulty)
         if new_status is not None: task.status = new_status
 
-        # After updating the task in the HashTable, we must resynchronize
-        # the auxiliary data structures to reflect the potential changes
-        # in priority or difficulty.
+        # Resynchronize auxiliary data structures to reflect changes
         self._resync_aux_structures()
 
         # Save changes to the database
@@ -122,7 +124,7 @@ class TaskManager:
 
     def delete_task(self, task_id):
         """
-        Deletes a task from all data structures.
+        Deletes a task from all data structures and logs the action.
         """
         task = self.tasks_ht.lookup(task_id)
         if not task:
@@ -136,7 +138,7 @@ class TaskManager:
         # 1. Delete from primary storage
         self.tasks_ht.delete(task_id)
 
-        # 2. Resynchronize auxiliary structures to remove the task
+        # 2. Resynchronize auxiliary structures
         self._resync_aux_structures()
 
         # 3. Delete from database
@@ -155,25 +157,36 @@ class TaskManager:
 
         action_type = last_action['action']
 
-        if action_type == 'delete':
-            # If we undid a delete, we need to re-create the task
+        if action_type == 'create':
+            task_id = last_action['task_id']
+            # Directly remove the task from storage and DB
+            if self.tasks_ht.lookup(task_id):
+                self.tasks_ht.delete(task_id)
+                if self.db_handler:
+                    self.db_handler.delete_task(task_id)
+                print(f"Undo create: Task {task_id} removed.")
+
+        elif action_type == 'delete':
+            # Restore the task from its saved data
             task_data = last_action['task_data']
-            task = Task(**task_data)  # Recreate task from dictionary
+            task = Task(**task_data)
             self.tasks_ht.insert(task.task_id, task)
-            self._resync_aux_structures()
             if self.db_handler:
                 self.db_handler.save_task(task)
             print(f"Undo delete: Task {task.task_id} restored.")
 
         elif action_type == 'update':
-            # If we undid an update, we restore the task to its old state
+            # Restore the task to its old state
             old_state = last_action['old_state']
-            task = Task(**old_state)  # Recreate task from old state dict
+            task = Task(**old_state)
             self.tasks_ht.insert(task.task_id, task)  # Overwrite current state in HT
-            self._resync_aux_structures()
             if self.db_handler:
                 self.db_handler.update_task(task)
             print(f"Undo update: Task {task.task_id} reverted to previous state.")
+
+        # Crucially, resync all auxiliary structures after any undo action
+        # to ensure they reflect the new state of the main hash table.
+        self._resync_aux_structures()
 
     # --- Data Retrieval Methods for the GUI ---
 
@@ -186,19 +199,26 @@ class TaskManager:
         """
         Returns a list of PENDING tasks sorted from highest to lowest priority.
         """
-        # We get the task IDs from the PQ, which are already sorted by priority.
-        # Note: A simple pop would destroy the PQ. Instead we rebuild a sorted list.
         sorted_ids = [item[1] for item in sorted(self.tasks_pq._heap)]
 
-        # Look up the full task object for each ID
-        return [self.tasks_ht.lookup(task_id) for task_id in sorted_ids if task_id in self.tasks_ht]
+        # Look up the full task object and explicitly filter for pending status
+        pending_tasks = []
+        for task_id in sorted_ids:
+            task = self.tasks_ht.lookup(task_id)
+            if task and task.status == 'pending':
+                pending_tasks.append(task)
+        return pending_tasks
 
     def get_tasks_by_difficulty(self):
         """
         Returns a list of PENDING tasks sorted from lowest to highest difficulty.
         """
-        # The BST's in-order traversal gives us tasks sorted by difficulty (the key).
         sorted_nodes = self.tasks_bst.get_all_nodes_sorted()
 
-        # Look up the full task object for each ID from the sorted nodes
-        return [self.tasks_ht.lookup(task_id) for _, task_id in sorted_nodes if task_id in self.tasks_ht]
+        # Look up the full task object and explicitly filter for pending status
+        pending_tasks = []
+        for _, task_id in sorted_nodes:
+            task = self.tasks_ht.lookup(task_id)
+            if task and task.status == 'pending':
+                pending_tasks.append(task)
+        return pending_tasks
