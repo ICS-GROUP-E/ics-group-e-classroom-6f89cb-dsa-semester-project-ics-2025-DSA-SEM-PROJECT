@@ -18,7 +18,7 @@ class Task:
         - created_at (datetime, optional): The creation time. Defaults to now.
         - status (str, optional): 'pending' or 'completed'. Defaults to 'pending'.
         """
-        self.task_id=task_id
+        self.task_id = task_id if task_id else str(uuid.uuid4())
         self.description=description
         self.priority=int(priority)
         self.difficulty=int(difficulty)
