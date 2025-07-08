@@ -62,20 +62,3 @@ class PriorityQueue:
         return [str(p) for p in self.heap]
 
 
-if __name__ == "__main__":
-    triage = PriorityQueue()
-
-    triage.insert("Alice", 3)
-    triage.insert("Bob", 1)
-    triage.insert("Claire", 2)
-    triage.insert("David", 4)
-
-    print("Current queue:")
-    print(triage.list_patients())
-
-    print("\nServing patients by priority:")
-    while True:
-        next_patient = triage.remove_highest_priority()
-        if not next_patient:
-            break
-        print(f"Serving: {next_patient}")
