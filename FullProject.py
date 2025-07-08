@@ -325,10 +325,7 @@ def delete_medicine():
         cursor.execute("SELECT * FROM meddata WHERE Name = %s", (name,))
         record = cursor.fetchone()
 
-        if not record:
-            messagebox.showerror("Not Found", f"No medicine found with name '{name}'.")
-            delete_entry.delete(0, tk.END)
-            return
+        
         delete_stack.push(record)
         cursor.execute("DELETE FROM meddata WHERE Name = %s", (name,))
         conn.commit()
@@ -344,9 +341,13 @@ def delete_medicine():
         start = time.perf_counter()
         end = time.perf_counter()
         log_operation("Stacks", "POP", start, end)
-
+        if not record:
+            messagebox.showerror("Not Found", f"No medicine found with name '{name}'.")
+            delete_entry.delete(0, tk.END)
+            return
         load_data_into_table()
         reset_fields()
+        
     except Exception as e:
         messagebox.showerror("Error", str(e))
         reset_fields()
