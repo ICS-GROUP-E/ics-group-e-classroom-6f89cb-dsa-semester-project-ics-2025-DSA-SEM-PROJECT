@@ -14,7 +14,7 @@ def create_medicine(name,quantity,price,expiry):
      values = (name,quantity,price,expiry)
      cursor.execute(sql,values)
      conn.commit()
-#xx
+
      print(f"Successfully added medicine: {name}")
   except mysql.connector.Error as err:
      print(f"Something went wrong: {err}")
