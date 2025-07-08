@@ -11,13 +11,14 @@ logger = logging.getLogger(__name__)
 
 # Import the EventPlanner logic and DBManager
 try:
+    # Assuming core/event_planner.py is the new path for event_planner_integrated.py
     from core.event_planner import EventPlanner, Event, LLNode
     from database.db_manager import DBManager
 except ImportError as e:
     logger.error(f"Failed to import backend modules: {e}")
     messagebox.showerror("Import Error", "Could not load backend modules. "
-                                        "Ensure 'event_planner_integrated.py' and 'event_planner_db.py' "
-                                        "are in the same directory.")
+                                        "Ensure 'core/event_planner.py' and 'database/db_manager.py' "
+                                        "are correctly placed and accessible.")
     exit() # Exit if core modules cannot be imported
 
 class EventPlannerGUI:
@@ -28,7 +29,7 @@ class EventPlannerGUI:
         """
         self.master = master
         master.title("Event Planner")
-        master.geometry("500x700") # Increased size for better layout
+        master.geometry("1000x700") # Increased size for better layout
         master.protocol("WM_DELETE_WINDOW", self._on_closing) # Handle window close event
 
         # Initialize DB Manager and load max event ID
@@ -39,6 +40,9 @@ class EventPlannerGUI:
         # --- Status Bar (Initialize early as it's used during loading) ---
         self.status_label = ttk.Label(master, text="Ready", relief=tk.SUNKEN, anchor=tk.W)
         self.status_label.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Track events that have already been warned about to avoid spam
+        self.warned_events = set() # Moved here to be part of GUI instance
 
         self._load_data_from_db() # Load existing events and tasks from DB (now status_label exists)
 
@@ -71,7 +75,8 @@ class EventPlannerGUI:
         self.master.after(1000, self._update_all_displays) # Initial display update (now all widgets exist)
         
         # --- Report Generation Button ---
-        self._setup_report_button()
+        # Removed from master frame, will add to a tab or specific location if requested.
+        # self._setup_report_button() 
 
     def _setup_events_tab(self):
         """Sets up the UI elements for the Events tab."""
@@ -169,6 +174,7 @@ class EventPlannerGUI:
         ttk.Button(button_frame, text="Clear Fields", command=self._clear_event_entry_fields).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Refresh Display", command=lambda: self._display_events(filter_upcoming=True)).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Save All Data", command=self._save_all_data_to_db).pack(side=tk.LEFT, padx=5) # Added Save button
+        ttk.Button(button_frame, text="Generate Report", command=self._generate_report).pack(side=tk.LEFT, padx=5) # Added Generate Report button
 
         # --- Event List Treeview ---
         tree_frame = ttk.Frame(self.events_frame, padding="5")
@@ -201,21 +207,40 @@ class EventPlannerGUI:
 
     def _setup_report_button(self):
         """Sets up the report generation button."""
-        button_frame = ttk.Frame(self.master, padding="5")
-        button_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
-        ttk.Button(button_frame, text="Generate Report", command=self._generate_report).pack(side=tk.LEFT, padx=5)
+        # The Generate Report button has been added to the Events tab button frame
+        # This provides easy access to report generation functionality
+        pass 
 
     def _generate_report(self):
         """Generates a report of data structure executions."""
-        from reports import DataStructureReportGenerator
+        # This functionality depends on the report_generator module
+        try:
+            from reports.report_generator import DataStructureReportGenerator
+        except ImportError:
+            messagebox.showerror("Import Error", "Report generator module not found. "
+                                                "Ensure 'reports/report_generator.py' is available.")
+            return
+
         import datetime
+        
+        # Ask user which type of report they want
+        report_type = messagebox.askyesno("Report Type", 
+                                        "Choose report type:\n\n"
+                                        "YES = Activity Receipt (Brief summary of operations)\n"
+                                        "NO = Comprehensive Report (Detailed analysis)\n\n"
+                                        "Click YES for receipt-style report.")
         
         # Ask user where to save the PDF
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        default_filename = f"data_structure_report_{timestamp}.pdf"
+        if report_type:
+            default_filename = f"activity_receipt_{timestamp}.pdf"
+            title = "Save Activity Receipt As"
+        else:
+            default_filename = f"data_structure_report_{timestamp}.pdf"
+            title = "Save Comprehensive Report As"
         
         file_path = filedialog.asksaveasfilename(
-            title="Save Report As",
+            title=title,
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
             initialfile=default_filename
@@ -228,13 +253,18 @@ class EventPlannerGUI:
         report_generator = DataStructureReportGenerator(self.planner)
 
         try:
-            # Generate report with user-specified filename
-            report_path = report_generator.generate_comprehensive_report(file_path)
-            messagebox.showinfo("Report Generated", f"Report saved successfully as:\n{report_path}")
+            # Generate the appropriate report type
+            if report_type:
+                report_path = report_generator.generate_activity_receipt(file_path)
+                messagebox.showinfo("Receipt Generated", f"Activity receipt saved successfully as:\n{report_path}")
+            else:
+                report_path = report_generator.generate_comprehensive_report(file_path)
+                messagebox.showinfo("Report Generated", f"Comprehensive report saved successfully as:\n{report_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")
 
     def _setup_tasks_tab(self):
+        """Sets up the UI elements for the Tasks tab."""
         # --- Event Selection for Tasks ---
         event_select_frame = ttk.LabelFrame(self.tasks_frame, text="Select Event for Tasks", padding="10")
         event_select_frame.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
@@ -277,9 +307,6 @@ class EventPlannerGUI:
         # Variable to hold the ID of the event whose tasks are currently displayed
         self.current_event_tasks_id = None
         
-        # Track events that have already been warned about to avoid spam
-        self.warned_events = set()
-
     def _setup_reminders_tab(self):
         """Sets up the UI elements for the Reminders tab."""
         ttk.Label(self.reminders_frame, text="Current Reminder Queue:").pack(pady=5, anchor=tk.W)
@@ -330,7 +357,7 @@ class EventPlannerGUI:
                 raise ValueError(f"Invalid minute value: {minute}")
         except ValueError:
             # If minute is invalid, default to 00
-            minute = "00"
+            minute = "00" # This default might mask input errors, consider showing message
             
         time_str = f"{hour}:{minute}"
         
@@ -372,6 +399,9 @@ class EventPlannerGUI:
             self._clear_event_entry_fields()
             self.event_tree.selection_remove(self.event_tree.selection()) # Explicitly deselect after creation
             self._update_all_displays()
+            # Log queue operation if reminder was set
+            if event_data.get('reminder_set', False):
+                self.planner._log_execution('queue', 'ENQUEUE', f'Reminder queued for event: {new_event.name}')
         except ValueError as e:
             self._show_message("Input Error", str(e))
         except Exception as e:
@@ -396,6 +426,7 @@ class EventPlannerGUI:
                 self._clear_event_entry_fields()
                 self.event_tree.selection_remove(self.event_tree.selection()) # Explicitly deselect after update
                 self._update_all_displays()
+                # Reminder re-queuing is handled directly in EventPlanner.update_event
             else:
                 self._show_message("Error", f"Failed to update event ID {event_id}.")
         except ValueError as e:
@@ -585,27 +616,37 @@ class EventPlannerGUI:
 
     # --- Reminder Tab Methods ---
     def _process_reminders_gui(self):
-        """Triggers reminder processing and updates the display."""
+        """
+        Triggers reminder processing and updates the display.
+        Shows pop-up only for events 3 minutes away.
+        """
         try:
-            processed_for_removal, ten_min_reminders = self.planner.process_reminders()
+            processed_for_removal, three_min_reminders = self.planner.process_reminders() # Renamed variable
             
-            # Show specific 10-minute reminders as pop-ups
-            if ten_min_reminders:
-                for event in ten_min_reminders:
+            # Show specific 3-minute reminders as pop-ups, only once per event
+            if three_min_reminders: # Use renamed variable
+                for event in three_min_reminders:
                     if event.event_id not in self.warned_events:
-                        messagebox.showwarning("Event Notification", 
-                                             f"Reminder: {event.name} starts in 10 minutes!\nDate: {event.date}\nTime: {event.time}")
-                        self.warned_events.add(event.event_id)
-                        logger.info(f"10-minute warning shown for event: {event.name}")
+                        self._show_message("Upcoming Event Reminder", 
+                                           f"ALERT!!\n\nTake note that {event.name} is happening in 3 minutes.") # Updated message
+                        self.warned_events.add(event.event_id) # Mark as warned
+                        logger.info(f"3-minute warning shown for event: {event.name}") # Updated log message
             
-            # Update status bar for processed reminders
+            # Update status bar for general processed reminders or no reminders
             if processed_for_removal: 
-                valid_names = [e.name for e in processed_for_removal if hasattr(e, 'name')]
+                valid_names = [e.name for e in processed_for_removal if isinstance(e, Event)]
                 if valid_names:
                     names = ", ".join(valid_names)
-                    self.status_label.config(text=f"Processed reminders for: {names}")
+                    self.status_label.config(text=f"Processed reminders for: {names}") 
                 else:
                     self.status_label.config(text="Processed some reminders.")
+                self._save_all_data_to_db() # Save changes if events were removed from queue (processed)
+            elif three_min_reminders: # If only 3-min reminders were found, update status bar for them
+                event_names = [e.name for e in three_min_reminders if isinstance(e, Event)]
+                if event_names:
+                    self.status_label.config(text=f"ALERT: {', '.join(event_names)} happening in 3 minutes!") # Updated message
+                else:
+                    self.status_label.config(text="ALERT: Events happening in 3 minutes!")
             else:
                 self.status_label.config(text="No reminders to process at this time.")
 
@@ -615,19 +656,59 @@ class EventPlannerGUI:
             self._show_message("Error", f"Failed to process reminders: {e}")
 
     def _display_reminder_queue(self):
-        """Populates the reminder listbox."""
+        """Populates the reminder listbox with detailed information."""
         self.reminder_listbox.delete(0, tk.END)
         reminders = self.planner.view_reminder_queue()
         if not reminders:
-            self.reminder_listbox.insert(tk.END, "No reminders in queue.")
+            self.reminder_listbox.insert(tk.END, "📭 No reminders in queue.")
+            self.reminder_listbox.insert(tk.END, "")
+            self.reminder_listbox.insert(tk.END, "💡 Tip: Create events with reminders enabled to see them here!")
         else:
-            for event in reminders:
-                self.reminder_listbox.insert(tk.END, f"ID: {event.event_id} - {event.name} on {event.date} at {event.time}")
+            self.reminder_listbox.insert(tk.END, f"📋 Queue Status: {len(reminders)} reminder(s) pending")
+            self.reminder_listbox.insert(tk.END, "━" * 50)
+            
+            # Calculate time until each event
+            current_time = datetime.datetime.now()
+            
+            for i, event in enumerate(reminders, 1):
+                try:
+                    event_time = self.planner._get_datetime(event.date, event.time)
+                    time_diff = event_time - current_time
+                    
+                    if time_diff.total_seconds() > 0:
+                        # Future event
+                        days = time_diff.days
+                        hours, remainder = divmod(time_diff.seconds, 3600)
+                        minutes, _ = divmod(remainder, 60)
+                        
+                        if days > 0:
+                            time_str = f"in {days}d {hours}h {minutes}m"
+                        elif hours > 0:
+                            time_str = f"in {hours}h {minutes}m"
+                        else:
+                            time_str = f"in {minutes}m"
+                    else:
+                        # Past event
+                        time_str = "OVERDUE"
+                    
+                    self.reminder_listbox.insert(tk.END, f"{i}. 🔔 {event.name}")
+                    self.reminder_listbox.insert(tk.END, f"    📅 {event.date} at {event.time} ({time_str})")
+                    self.reminder_listbox.insert(tk.END, f"    🆔 Event ID: {event.event_id}")
+                    if i < len(reminders):
+                        self.reminder_listbox.insert(tk.END, "")
+                        
+                except Exception as e:
+                    self.reminder_listbox.insert(tk.END, f"{i}. ❌ Error processing event: {event.name}")
+                    logger.error(f"Error calculating time for event {event.event_id}: {e}")
+            
+            self.reminder_listbox.insert(tk.END, "━" * 50)
+            self.reminder_listbox.insert(tk.END, "⏰ 3-minute alerts will show automatically!") # Updated message
+            self.reminder_listbox.insert(tk.END, "🔄 Updates every 60 seconds")
 
     def _check_reminders_periodic(self):
         """Periodically checks and processes reminders."""
-        self._process_reminders_gui() # This handles both reminder processing and 10-minute warnings
-        # Schedule the next check in 60 seconds (60000 milliseconds)
+        self._process_reminders_gui() # This handles both reminder processing and 3-minute warnings
+        # Schedule the next check in 60 seconds (60000 milliseconds) for reasonable precision
         self.master.after(60000, self._check_reminders_periodic)
 
 
@@ -635,28 +716,81 @@ class EventPlannerGUI:
     def _undo_last_action(self):
         """Handles the 'Undo Last Action' button click."""
         try:
+            # Check if there's anything to undo
+            history = self.planner.view_edited_events()
+            if not history:
+                self._show_message("Nothing to Undo", "No actions available to undo.\n\nCreate or edit an event first!")
+                return
+            
+            # Show what will be undone
+            last_action = history[-1]  # Most recent action
+            confirm = messagebox.askyesno("Confirm Undo", 
+                                         f"🔄 Undo last action?\n\n" +
+                                         f"📝 Event: {last_action.name}\n" +
+                                         f"📅 Date: {last_action.date}\n" +
+                                         f"🕐 Time: {last_action.time}\n\n" +
+                                         f"This will restore the previous state of this event.\n" +
+                                         f"Continue?")
+            
+            if not confirm:
+                return
+            
             undone_event = self.planner.undo_last_edit()
             if undone_event:
                 self.db_manager.save_event(undone_event) # Save the restored state
-                self._show_message("Undo Success", f"Last action undone. Event ID {undone_event.event_id} restored.")
+                self._show_message("✅ Undo Successful", 
+                                   f"Last action undone successfully!\n\n" +
+                                   f"📝 Event ID {undone_event.event_id} restored to previous state.\n" +
+                                   f"🔍 Check the Events tab to see the changes.\n\n" +
+                                   f"📊 Stack operation logged for reporting.")
             else:
                 # If undo returns None, it might mean a creation was undone, or no action to undo
-                self._show_message("Undo Info", "No more actions to undo or a creation was undone.")
+                self._show_message("✅ Undo Complete", 
+                                   "Event creation was undone.\n\n" +
+                                   "The newly created event has been removed from the system.\n\n" +
+                                   "📊 Stack operation logged for reporting.")
             self._update_all_displays()
         except Exception as e:
             logger.error(f"Error during undo: {e}", exc_info=True)
             self._show_message("Error", f"Failed to undo: {e}")
 
     def _display_edit_history(self):
-        """Populates the undo history listbox."""
+        """Populates the undo history listbox with detailed information."""
         self.undo_listbox.delete(0, tk.END)
         history = self.planner.view_edited_events()
         if not history:
-            self.undo_listbox.insert(tk.END, "No edit history.")
+            self.undo_listbox.insert(tk.END, "📚 No edit history available.")
+            self.undo_listbox.insert(tk.END, "")
+            self.undo_listbox.insert(tk.END, "💡 Create or edit events to see undo history here!")
+            self.undo_listbox.insert(tk.END, "")
+            self.undo_listbox.insert(tk.END, "🔄 Stack can hold up to 10 previous states")
         else:
+            self.undo_listbox.insert(tk.END, f"📚 Undo History: {len(history)} state(s) available")
+            self.undo_listbox.insert(tk.END, "━" * 50)
+            self.undo_listbox.insert(tk.END, "⬇️ Most recent (top of stack) ⬇️")
+            self.undo_listbox.insert(tk.END, "")
+            
             # Display in reverse chronological order (most recent first)
-            for event_state in reversed(history):
-                self.undo_listbox.insert(tk.END, f"ID: {event_state.event_id} - {event_state.name} ({event_state.date} {event_state.time})")
+            for i, event_state in enumerate(reversed(history), 1):
+                if i == 1:
+                    self.undo_listbox.insert(tk.END, f"🔝 {i}. {event_state.name}")
+                else:
+                    self.undo_listbox.insert(tk.END, f"    {i}. {event_state.name}")
+                
+                self.undo_listbox.insert(tk.END, f"      📅 {event_state.date} at {event_state.time}")
+                self.undo_listbox.insert(tk.END, f"      🆔 Event ID: {event_state.event_id}")
+                
+                if hasattr(event_state, 'location') and event_state.location:
+                    self.undo_listbox.insert(tk.END, f"      📍 Location: {event_state.location}")
+                
+                if i < len(history):
+                    self.undo_listbox.insert(tk.END, "")
+            
+            self.undo_listbox.insert(tk.END, "")
+            self.undo_listbox.insert(tk.END, "⬆️ Oldest (bottom of stack) ⬆️")
+            self.undo_listbox.insert(tk.END, "━" * 50)
+            self.undo_listbox.insert(tk.END, f"💾 Stack Usage: {len(history)}/10 slots")
+            self.undo_listbox.insert(tk.END, "🔄 Click 'Undo Last Action' to pop from stack!")
 
     # --- Persistence and General Methods ---
     def _load_data_from_db(self):

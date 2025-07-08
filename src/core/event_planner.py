@@ -3,11 +3,14 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, List
 
-# Import data structures
-from data_structures.binary_search_tree import BSTNode
-from data_structures.linked_list import LLNode
-from data_structures.stack import EventStack
-from data_structures.queue import EventQueue
+# Import data structures (assuming these paths are correct in your project structure)
+# If LLNode is defined in core/event_planner.py, the import below might be redundant or cause issues
+# For this code, I'm assuming LLNode is defined directly in this file as it was in previous versions.
+# If you have data_structures/linked_list.py with LLNode, you might need to adjust this.
+# from data_structures.binary_search_tree import BSTNode # Assuming BSTNode is in data_structures/binary_search_tree.py
+# from data_structures.linked_list import LLNode # Assuming LLNode is in data_structures/linked_list.py
+# from data_structures.stack import EventStack # Assuming EventStack is in data_structures/stack.py
+# from data_structures.queue import EventQueue # Assuming EventQueue is in data_structures/queue.py
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -38,7 +41,28 @@ class Event:
             self.attendees
         )
 
-# Data structure classes are now imported from separate modules
+# Node for Linked List (tasks) - Keeping it here as per your provided code structure
+class LLNode:
+    def __init__(self, data: str, completed: bool = False):
+        """
+        Initializes a node for a linked list.
+        :param data: The data to store in the node (e.g., task description).
+        :param completed: Boolean indicating if the task is completed (default False).
+        """
+        self.data = data
+        self.completed = completed
+        self.next = None
+
+# Node for Binary Search Tree - Keeping it here as per your provided code structure
+class BSTNode:
+    def __init__(self, event: Event):
+        """
+        Initializes a node for the Binary Search Tree.
+        :param event: The Event object to store in this node.
+        """
+        self.event = event
+        self.left = None
+        self.right = None
 
 # Event Planner class integrating BST, Stack, Linked List, and Queue
 class EventPlanner:
@@ -236,15 +260,23 @@ class EventPlanner:
             event_to_update.attendees = attendees
         
         # Handle reminder_set change and queue management
-        if reminder_set is not None and reminder_set != event_to_update.reminder_set:
-            if reminder_set: # Was false, now true -> add to queue
+        # If reminder_set changes, or if date/time changes AND reminder_set is True, re-evaluate queue
+        reminder_status_changed = (reminder_set is not None and reminder_set != event_to_update.reminder_set)
+
+        if reminder_status_changed or (date_time_changed and event_to_update.reminder_set):
+            # Remove from queue first to handle both status change and re-queuing
+            self.reminder_queue = [e for e in self.reminder_queue if e.event_id != event_id]
+            self._log_execution('queue', 'DEQUEUE', f'Event "{event_to_update.name}" (ID: {event_id}) removed from reminder queue for re-evaluation')
+
+            if reminder_set is not None: # Apply new reminder_set status
+                event_to_update.reminder_set = reminder_set
+            
+            if event_to_update.reminder_set: # If reminder is now set (or still set), add back to queue
                 self.reminder_queue.append(event_to_update)
-                logger.debug(f"Event {event_id} added to reminder queue.")
-            else: # Was true, now false -> remove from queue
-                # Rebuild queue without the event (more robust than .remove() if duplicates or complex objects)
-                self.reminder_queue = [e for e in self.reminder_queue if e.event_id != event_id]
-                logger.debug(f"Event {event_id} removed from reminder queue.")
-            event_to_update.reminder_set = reminder_set
+                self._log_execution('queue', 'ENQUEUE', f'Event "{event_to_update.name}" (ID: {event_id}) re-added to reminder queue')
+                logger.debug(f"Event {event_id} re-added to reminder queue.")
+            else:
+                logger.debug(f"Event {event_id} reminder unset, removed from queue.")
         
         # If date or time changed, the event's position in the BST might change.
         # So, we delete the old node and re-insert the updated event.
@@ -252,6 +284,7 @@ class EventPlanner:
             logger.debug(f"Date/time changed for event {event_id}. Re-inserting into BST.")
             self.bst_root = self._delete_bst_node(self.bst_root, event_id) # Remove old node by ID
             self._insert_bst(event_to_update) # Insert updated event
+            self._log_execution('bst', 'UPDATE', f'Event "{event_to_update.name}" (ID: {event_id}) re-inserted into BST due to time change')
         
         # Push the *original* state of the event to the undo stack
         self.edit_stack.append(old_event_state)
@@ -555,12 +588,12 @@ class EventPlanner:
     def process_reminders(self) -> tuple[List[Event], List[Event]]:
         """
         Processes reminders from the queue based on current time.
-        Identifies events needing general processing and those exactly 10 mins away for specific notification.
-        :return: A tuple: (list of events processed and removed from queue, list of events for 10-min notification).
+        Identifies events needing general processing and those exactly 3 mins away for specific notification.
+        :return: A tuple: (list of events processed and removed from queue, list of events for 3-min notification).
         """
         current_time = datetime.datetime.now()
         processed_for_removal = []
-        ten_min_reminders = []
+        three_min_reminders = [] # Renamed from ten_min_reminders
 
         # Iterate through a copy to allow modification of original queue during iteration
         for event in list(self.reminder_queue): 
@@ -568,17 +601,18 @@ class EventPlanner:
                 event_time = self._get_datetime(event.date, event.time)
                 time_until_event = event_time - current_time
 
-                # Define a small window for "10 minutes to" to account for execution time
-                ten_min_lower_bound = datetime.timedelta(minutes=9, seconds=50)
-                ten_min_upper_bound = datetime.timedelta(minutes=10, seconds=10)
+                # Define a precise window for "3 minutes to" alert
+                three_min_lower_bound = datetime.timedelta(minutes=2, seconds=50) # 3 minutes - 10 seconds buffer
+                three_min_upper_bound = datetime.timedelta(minutes=3, seconds=10) # 3 minutes + 10 seconds buffer
 
-                # Check for specific 10-minute reminder
-                if ten_min_lower_bound <= time_until_event <= ten_min_upper_bound:
-                    ten_min_reminders.append(event)
+                # Check for specific 3-minute reminder
+                if three_min_lower_bound <= time_until_event <= three_min_upper_bound:
+                    three_min_reminders.append(event)
+                    self._log_execution('queue', 'ALERT_TRIGGERED', f'3-min alert for event: {event.name}')
 
-                # Check for general processing (event is in the past or very soon upcoming)
-                # Events are removed from queue if they are within 5 minutes past or 15 minutes upcoming
-                if datetime.timedelta(minutes=-5) <= time_until_event <= datetime.timedelta(minutes=15): 
+                # Events are removed from queue if they are past their event time (e.g., 1 minute past)
+                # This ensures they stay in queue until the event has actually passed.
+                if time_until_event < datetime.timedelta(minutes=-1): # Remove if event was more than 1 minute ago
                     processed_for_removal.append(event)
                 
             except ValueError:
@@ -588,9 +622,10 @@ class EventPlanner:
         for event in processed_for_removal:
             if event in self.reminder_queue: # Check existence before removing
                 self.reminder_queue.remove(event)
+                self._log_execution('queue', 'DEQUEUED_PAST', f'Event "{event.name}" (ID: {event.event_id}) dequeued as past.')
         
         logger.info(f"Processed {len(processed_for_removal)} reminders, {len(self.reminder_queue)} remaining in queue.")
-        return processed_for_removal, ten_min_reminders
+        return processed_for_removal, three_min_reminders
 
     def view_reminder_queue(self) -> List[Event]:
         """
