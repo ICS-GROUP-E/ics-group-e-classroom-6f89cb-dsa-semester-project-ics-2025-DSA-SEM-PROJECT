@@ -59,7 +59,7 @@ class LibrarySystem:
     def view_book_status(self, book_id):
         if book_id not in self.books:
             print(" Book not found.")
-            return
+            return 
         book = self.books[book_id]
         print(f"\n Book: {book['title']}")
         print(f"Available copies: {book['available_copies']}")
