@@ -1,5 +1,7 @@
+
 import mysql.connector
 new_medicines=[]
+
 def create_medicine(name,quantity,price,expiry):
   new_medicines.append([name,quantity,price,expiry])
   try:
@@ -14,7 +16,7 @@ def create_medicine(name,quantity,price,expiry):
      values = (name,quantity,price,expiry)
      cursor.execute(sql,values)
      conn.commit()
-
+#xx
      print(f"Successfully added medicine: {name}")
   except mysql.connector.Error as err:
      print(f"Something went wrong: {err}")
@@ -22,9 +24,5 @@ def create_medicine(name,quantity,price,expiry):
      if conn.is_connected():
         conn.close()
 
-name = input("Please enter your medicine name: ")
-quantity = int(input("Please enter your quantity: "))
-price = float(input("Please enter your price: "))
-expiry = float(input("Please enter your expiry: "))
-
-create_medicine(name, quantity, price, expiry)
+create_medicine("Aspirin", 50, 2.0, "2025-10-15")
+create_medicine("Ibuprofen", 75, 2.5, "2026-01-01")
