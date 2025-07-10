@@ -1,28 +1,43 @@
+class ListManager:
+    def _init_(self):
+        self.data = []
 
-import mysql.connector
-new_medicines=[]
+    def insert(self, item):
+        self.data.append(item)
 
-def create_medicine(name,quantity,price,expiry):
-  new_medicines.append([name,quantity,price,expiry])
-  try:
-     conn=mysql.connector.connect (
-        host="localhost",
-        user="root",
-        passwd="",
-        database="medicines"
-     )
-     cursor=conn.cursor()
-     sql = "INSERT INTO meddata  (Name,Quantity,Price,Expiry) VALUES (%s,%s,%s,%s)"
-     values = (name,quantity,price,expiry)
-     cursor.execute(sql,values)
-     conn.commit()
-#xx
-     print(f"Successfully added medicine: {name}")
-  except mysql.connector.Error as err:
-     print(f"Something went wrong: {err}")
-  finally:
-     if conn.is_connected():
+    def get_all(self):
+        return self.data
+
+  new_medicines=ListManager()
+def create_medicine():
+    name = entries["Name"].get()
+    qty = entries["Quantity"].get()
+    price = entries["Price"].get()
+    expiry = entries["Expiry Date"].get()
+    if not all([name, qty, price, expiry]):
+        messagebox.showerror("Error", "All fields required")
+        return
+
+    new_medicines.insert(name)
+    new_medicines.insert(qty)
+    new_medicines.insert(price)
+    new_medicines.insert(expiry)
+    values= new_medicines.get_all()
+    try:
+
+        conn = connect_db()
+        cursor = conn.cursor()
+        sql="INSERT INTO meddata (Name, Quantity, Price, Expiry) VALUES (%s, %s, %s, %s)"
+        cursor.execute(sql, values)
+        conn.commit()
         conn.close()
-
-create_medicine("Aspirin", 50, 2.0, "2025-10-15")
-create_medicine("Ibuprofen", 75, 2.5, "2026-01-01")
+        messagebox.showinfo("Success", "Medicine added successfully")
+        load_data_into_table()
+        reset_fields()
+        global total_operations, structure_usage
+        total_operations += 1
+        structure_usage["List"] += 1  # change this according to the structure used
+        start = time.perf_counter()
+        # your action here
+        end = time.perf_counter()
+        log_operation("List", "POP", start, end)
