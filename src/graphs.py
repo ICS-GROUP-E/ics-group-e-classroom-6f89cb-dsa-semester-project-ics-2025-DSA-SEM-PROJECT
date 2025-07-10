@@ -18,7 +18,6 @@ class Graphs:
         # here we have BFS traversal to recommend the books
         if title not in self.graph:
             return []
-        ##
 
         visited = set()
         recommendations = []
@@ -37,8 +36,5 @@ class Graphs:
         return recommendations[:5]  # Return 5 recommendations
 
 
-if __name__ =="__main__":
-    library = Graphs()
-
-
-
+if __name__ == "__main__":
+    Library = Graphs()
