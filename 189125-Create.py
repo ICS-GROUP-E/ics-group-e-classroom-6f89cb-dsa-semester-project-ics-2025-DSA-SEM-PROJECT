@@ -36,8 +36,8 @@ def create_medicine():
         reset_fields()
         global total_operations, structure_usage
         total_operations += 1
-        structure_usage["List"] += 1  # change this according to the structure used
+        structure_usage["List"] += 1  
         start = time.perf_counter()
-        # your action here
+        
         end = time.perf_counter()
         log_operation("List", "POP", start, end)
