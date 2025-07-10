@@ -14,15 +14,13 @@ class Graphs:
             if book1 not in self.graph[book2]:
                 self.graph[book2].append(book1)
 
-
     def get_recommendations(self, title):
         # here we have BFS traversal to recommend the books
         if title not in self.graph:
             return []
-        ##
 
         visited = set()
-        recommendations = ()
+        recommendations = []
         queue = [title]
 
         while queue:
@@ -35,16 +33,8 @@ class Graphs:
                         queue.append(neighbor)
 
         recommendations.remove(title)
-        return recommendations[:5] #Return 5 recommendations
+        return recommendations[:5]  # Return 5 recommendations
 
 
 if __name__ == "__main__":
-    bg = Graphs()
-    bg.add_book_node("Book A")
-    bg.add_book_node("Book B")
-    bg.add_book_node("Book C")
-    bg.add_edge("Book A","Book B")
-    bg.add_edge("Book B", "Book C")
-    print(bg.get_recommendations("Book A"))
-
-
+    Library = Graphs()
