@@ -56,7 +56,7 @@ class LibrarySystem:
         else:
             print(" This user did not check out this book.")
 
-    def view_book_status(self, book_id):
+    def book_status(self, book_id):
         if book_id not in self.books:
             print(" Book not found.")
             return
