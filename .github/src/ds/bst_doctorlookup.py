@@ -1,4 +1,5 @@
-# bst_doctorlookup.py
+# src/ds/bst_doctorlookup.py
+#by Michelle
 
 class Doctor:
     def __init__(self, name, specialty):
@@ -29,7 +30,6 @@ class DoctorBST:
             elif doctor.name > node.doctor.name:
                 node.right = _insert(node.right, doctor)
             return node
-
         self.root = _insert(self.root, doctor)
 
     def searchDoctor(self, name):
@@ -42,7 +42,6 @@ class DoctorBST:
                 return _search(node.left, name)
             else:
                 return _search(node.right, name)
-
         return _search(self.root, name)
 
     def updateDoctor(self, name, new_specialty):
@@ -69,7 +68,6 @@ class DoctorBST:
                 node.doctor = min_larger.doctor
                 node.right = _delete(node.right, min_larger.doctor.name)
             return node
-
         self.root = _delete(self.root, name)
 
     def getMin(self, node):
