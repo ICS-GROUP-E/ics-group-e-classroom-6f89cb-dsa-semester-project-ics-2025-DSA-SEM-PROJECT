@@ -59,36 +59,9 @@ class LibrarySystem:
     def view_book_status(self, book_id):
         if book_id not in self.books:
             print(" Book not found.")
-            return 
+            return
         book = self.books[book_id]
         print(f"\n Book: {book['title']}")
         print(f"Available copies: {book['available_copies']}")
         print(f"Checked out to: {book['checked_out_to']}")
         print(f"Waitlist queue: {list(book['reservation_queue'])}")
-
-# ========== Example Usage ==========
-if __name__ == "__main__":
-    lib = LibrarySystem()
-
-    # Add books
-    lib.add_book("B001", "Intro to Python", 1)
-
-    # Users interact
-    lib.check_out_book("U001", "B001")   # U001 checks out
-    lib.check_out_book("U002", "B001")   # U002 joins waitlist
-    lib.check_out_book("U003", "B001")   # U003 joins waitlist
-
-    # View current status
-    lib.view_book_status("B001")
-
-    # U001 returns the book → U002 is auto-notified
-    lib.return_book("B001", "U001")
-
-    # View updated status
-    lib.view_book_status("B001")
-
-    # U002 returns the book → U003 is auto-notified
-    lib.return_book("B001", "U002")
-
-    # U003 returns the book → no one in waitlist
-    lib.return_book("B001", "U003")
