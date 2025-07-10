@@ -1,9 +1,11 @@
-# db_connection.py
+# src/database/db_connection.py
+#by Michelle
 import sqlite3
 
+DB_NAME = "doctors.db"
+
 def get_connection():
-    conn = sqlite3.connect("doctors.db")
-    return conn
+    return sqlite3.connect(DB_NAME)
 
 def initialize_db():
     conn = get_connection()
