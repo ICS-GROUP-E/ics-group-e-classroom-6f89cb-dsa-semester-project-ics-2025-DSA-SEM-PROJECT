@@ -1,84 +1,82 @@
-import tkinter as tk
-from tkinter import messagebox
-import mysql.connector
+class StackManager:
+    def _init_(self):
+        self.stack = []
 
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="",
-    database="medicines"
-)
-cursor = db.cursor()
+    def push(self, item):
+        self.stack.append(item)
 
+    def pop(self):
+        if self.stack:
+            return self.stack.pop()
+        return None
 
-# Stack for undo
-deleted_stack = []
+    def peek(self):
+        return self.stack[-1] if self.stack else None
 
+    def is_empty(self):
+        return len(self.stack) == 0
 
-
-def get_inventory():
-    conn = sqlite3.connect('pharmacy.db')
-    cur = conn.cursor()
-    cur.execute("SELECT * FROM medicines")
-    rows = cur.fetchall()
-    conn.close()
-    return rows
-
-
+delete_stack = StackManager()
 def delete_medicine():
-    name = entry.get()
-    conn = sqlite3.connect('pharmacy.db')
-    cur = conn.cursor()
 
-    # Save deleted for undo
-    cur.execute("SELECT * FROM medicines WHERE name = ?", (name,))
-    result = cur.fetchone()
-    if result:
-        deleted_stack.append(result)
-        cur.execute("DELETE FROM medicines WHERE name = ?", (name,))
-        conn.commit()
-        messagebox.showinfo("Deleted", f"{name} deleted from DB.")
-    else:
-        messagebox.showerror("Error", "Medicine not found.")
-    conn.close()
-    update_listbox()
+    name = delete_entry.get().strip()
+    if not name:
+        messagebox.showerror("Input Error", "Please enter a medicine name to delete.")
+        return
+    try:
+        conn = connect_db()
+        cursor= conn.cursor()
+        cursor.execute("SELECT * FROM meddata WHERE Name = %s", (name,))
+        record = cursor.fetchone()
 
-
-def undo_delete():
-    if deleted_stack:
-        med = deleted_stack.pop()
-        conn = sqlite3.connect('pharmacy.db')
-        cur = conn.cursor()
-        cur.execute("INSERT OR REPLACE INTO medicines VALUES (?, ?, ?, ?)", med)
+        
+        delete_stack.push(record)
+        cursor.execute("DELETE FROM meddata WHERE Name = %s", (name,))
         conn.commit()
         conn.close()
-        messagebox.showinfo("Undo", f"{med[0]} restored.")
-        update_listbox()
-    else:
-        messagebox.showinfo("Undo", "Nothing to undo.")
+
+        delete_entry.delete(0, tk.END)
+
+        messagebox.showinfo("Success", f"'{name}' deleted successfully")
+        global total_operations, structure_usage
+        total_operations += 1
+        structure_usage["Stacks"] += 1  
+
+        start = time.perf_counter()
+        end = time.perf_counter()
+        log_operation("Stacks", "POP", start, end)
+        if not record:
+            messagebox.showerror("Not Found", f"No medicine found with name '{name}'.")
+            delete_entry.delete(0, tk.END)
+            return
+        load_data_into_table()
+        reset_fields()
+        
+    except Exception as e:
+        messagebox.showerror("Error", str(e))
+        reset_fields()
+#Function to undo ----------------------------------------------------------------------
+def undo_delete():
+    if delete_stack.is_empty():
+        messagebox.showinfo("Undo", "No deletions to undo.")
+        return
+
+    try:
+        record = delete_stack.pop()
+        conn = connect_db()
+        cursor = conn.cursor()
+        name, quantity, price, expiry = record[1], record[2], record[3], record[4]
+        cursor.execute(
+            "INSERT INTO meddata ( Name, Quantity, Price, Expiry) VALUES ( %s, %s, %s, %s)",
+            (name, quantity, price, expiry))
+        conn.commit()
+        conn.close()
+
+        messagebox.showinfo("Undo Success", f"Medicine '{record[1]}' restored successfully.")
+        load_data_into_table()
+    except Exception as e:
+        messagebox.showerror("Undo Error", str(e))
 
 
-def update_listbox():
-    listbox.delete(0, tk.END)
-    for med in get_inventory():
-        display = f"{med[0]}: Qty={med[1]}, Price={med[2]}, Exp={med[3]}"
-        listbox.insert(tk.END, display)
 
 
-# GUI
-root = tk.Tk()
-root.title("Pharmacy Inventory - Delete (with DB)")
-
-tk.Label(root, text="Enter Medicine Name to Delete:").pack()
-entry = tk.Entry(root)
-entry.pack()
-
-tk.Button(root, text="Delete", command=delete_medicine).pack(pady=5)
-tk.Button(root, text="Undo Delete", command=undo_delete).pack(pady=5)
-
-listbox = tk.Listbox(root, width=60)
-listbox.pack(pady=10)
-
-update_listbox()
-
-root.mainloop()
