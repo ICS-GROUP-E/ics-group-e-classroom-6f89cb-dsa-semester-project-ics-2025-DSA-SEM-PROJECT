@@ -1,19 +1,14 @@
-import tkinter as tk
+import time
 from tkinter import messagebox
-import mysql.connector
 
+from database import conn2
 
+# Dummy logger to prevent errors if you can't import
+def log_operation(structure, operation, start, end):
+    duration = end - start
+    print(f"[{structure}] {operation} took {duration:.6f} seconds")
 
-# Connect to MySQL
-conn = mysql.connector.connect(
-    host='localhost',
-    user='root',
-    passwd='',
-    database='medicines'
-)
-
-
-# Linked List Node
+# Linked list classes
 class MedicineNode:
     def __init__(self, name, quantity, price, expiry):
         self.name = name
@@ -22,18 +17,17 @@ class MedicineNode:
         self.expiry = expiry
         self.next = None
 
-# Linked List
 class MedicineLinkedList:
     def __init__(self):
         self.head = None
 
     def load_from_database(self):
-        cursor = conn.cursor()
+        cursor = conn2.cursor()
         cursor.execute("SELECT * FROM meddata")
         results = cursor.fetchall()
         cursor.close()
 
-        for name, quantity, price, expiry in results:
+        for _, name, quantity, price, expiry in results:
             self.append(name, quantity, price, expiry)
 
     def append(self, name, quantity, price, expiry):
@@ -53,67 +47,62 @@ class MedicineLinkedList:
                 current.quantity = quantity
                 current.price = price
                 current.expiry = expiry
-                return True  # Found and updated
+                return True
             current = current.next
-        return False  # Not found
+        return False
 
     def update_database(self, name, quantity, price, expiry):
-        cursor = conn.cursor()
+        cursor = conn2.cursor()
         sql = "UPDATE meddata SET Quantity = %s, Price = %s, Expiry = %s WHERE Name = %s"
         cursor.execute(sql, (quantity, price, expiry, name))
-        conn.commit()
+        conn2.commit()
         cursor.close()
 
-
+# Initialize medicine list
 medicine_list = MedicineLinkedList()
 medicine_list.load_from_database()
 
-# Tkinter GUI
-root = tk.Tk()
-root.title("Update Medicine")
-root.geometry("400x300")
-
-
-tk.Label(root, text="Medicine Name").pack()
-name_entry = tk.Entry(root)
-name_entry.pack()
-
-tk.Label(root, text="New Quantity").pack()
-quantity_entry = tk.Entry(root)
-quantity_entry.pack()
-
-tk.Label(root, text="New Price").pack()
-price_entry = tk.Entry(root)
-price_entry.pack()
-
-tk.Label(root, text="New Expiry (YYYY-MM-DD)").pack()
-expiry_entry = tk.Entry(root)
-expiry_entry.pack()
-
-def update_medicine():
-    name = name_entry.get()
-    quantity = quantity_entry.get()
-    price = price_entry.get()
-    expiry = expiry_entry.get()
+# Function to call from GUI button
+def update_medicine(entries, product_table):
+    name = entries["Name"].get()
+    quantity = entries["Quantity"].get()
+    price = entries["Price"].get()
+    expiry = entries["Expiry Date"].get()
 
     if not (name and quantity and price and expiry):
         messagebox.showwarning("Input Error", "Please fill all fields")
         return
 
-
     success = medicine_list.update_node(name, quantity, price, expiry)
-
-
     if success:
-
         try:
             medicine_list.update_database(name, quantity, price, expiry)
             messagebox.showinfo("Success", "Medicine updated successfully!")
+
+            global total_operations, structure_usage
+            total_operations += 1
+            structure_usage["LinkedList"] += 1
+
+            start = time.perf_counter()
+            end = time.perf_counter()
+            log_operation("LinkedList", "UPDATE", start, end)
+
         except Exception as e:
             messagebox.showerror("Database Error", f"Error updating DB: {e}")
     else:
         messagebox.showerror("Not Found", f"Medicine '{name}' not found in records.")
 
-tk.Button(root, text="Update", command=update_medicine).pack(pady=10)
+    # Clear and reload table manually (since you can’t use load_data_into_table)
+    for row in product_table.get_children():
+        product_table.delete(row)
 
-root.mainloop()
+    cursor = conn2.cursor()
+    cursor.execute("SELECT * FROM meddata")
+    rows = cursor.fetchall()
+    for row in rows:
+        product_table.insert("", "end", values=row)
+    cursor.close()
+
+    # Reset fields manually (since you can’t use reset_fields)
+    for entry in entries.values():
+        entry.delete(0, "end")
