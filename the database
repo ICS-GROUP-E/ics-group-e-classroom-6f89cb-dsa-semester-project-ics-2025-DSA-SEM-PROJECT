@@ -1,0 +1,56 @@
+CREATE DATABASE PERSONAL_KNOWLEDGE;
+USE PERSONAL_KNOWLEDGE;
+-- ------------------------
+-- 1. NOTES TABLE (Tree + Base Content)
+-- ------------------------
+CREATE TABLE notes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255) NOT NULL,
+    content TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    parent_id INT,  -- Self-referencing for tree structure
+    FOREIGN KEY (parent_id) REFERENCES notes(id) ON DELETE SET NULL
+);
+
+-- ------------------------
+-- 2. NOTE VIEWS TABLE (Stack - Navigation History)
+-- ------------------------
+CREATE TABLE note_views (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    note_id INT NOT NULL,
+    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    session_id VARCHAR(100),
+    FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+);
+
+-- ------------------------
+-- 3. NOTE LINKS TABLE (Graph - Interconnected Notes)
+-- ------------------------
+CREATE TABLE note_links (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    source_id INT NOT NULL,
+    target_id INT NOT NULL,
+    UNIQUE (source_id, target_id),
+    FOREIGN KEY (source_id) REFERENCES notes(id) ON DELETE CASCADE,
+    FOREIGN KEY (target_id) REFERENCES notes(id) ON DELETE CASCADE
+);
+
+-- ------------------------
+-- 4. KEYWORDS TABLE (HashMap - Tags/Keywords)
+-- ------------------------
+CREATE TABLE keywords (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    keyword VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- ------------------------
+-- 5. KEYWORD-NOTE MAP TABLE (HashMap - Many-to-Many Keyword Lookup)
+-- ------------------------
+CREATE TABLE keyword_note_map (
+    keyword_id INT NOT NULL,
+    note_id INT NOT NULL,
+    PRIMARY KEY (keyword_id, note_id),
+    FOREIGN KEY (keyword_id) REFERENCES keywords(id) ON DELETE CASCADE,
+    FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE
+);
