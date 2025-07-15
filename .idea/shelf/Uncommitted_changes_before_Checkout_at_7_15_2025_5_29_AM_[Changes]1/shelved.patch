@@ -1,0 +1,501 @@
+Index: src/database/stacks_db.py
+===================================================================
+diff --git a/src/database/stacks_db.py b/src/database/stacks_db.py
+new file mode 100644
+--- /dev/null	(date 1752545898096)
++++ b/src/database/stacks_db.py	(date 1752545898096)
+@@ -0,0 +1,42 @@
++import sqlite3
++from tkinter import ttk
++from datetime import datetime
++
++def init_db():
++    conn = sqlite3.connect('stacks_db')
++    cursor = conn.cursor()
++    cursor.execute('''
++        CREATE TABLE IF NOT EXISTS input (
++        id INTEGER PRIMARY KEY AUTOINCREMENT,
++        title TEXT,
++        content TEXT,
++        created_at TEXT NOT NULL
++        )
++    ''')
++    conn.commit()
++    conn.close()
++
++def save_input(title, content):
++    conn = sqlite3.connect('stacks_db')
++    cursor = conn.cursor()
++    cursor.execute('''
++        INSERT INTO input (title, content, created_at) VALUES (?, ?, ?)
++    ''', (title, content, datetime.now().isoformat()))
++    conn.commit()
++    conn.close()
++
++def get_input():
++    conn = sqlite3.connect('stacks_db')
++    cursor = conn.cursor()
++    cursor.execute('SELECT ID, title, created_at FROM input ORDER BY created_at DESC')
++    content = cursor.fetchall()
++    conn.close()
++    return content
++
++def load_input(input_id):
++    conn = sqlite3.connect('stacks_db')
++    cursor = conn.cursor()
++    cursor.execute('SELECT content FROM input WHERE id = ? ' , (input_id))
++    result = cursor.fetchone()
++    conn.close()
++    return result[0] if result else ""
+\ No newline at end of file
+Index: .idea/misc.xml
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+new file mode 100644
+--- /dev/null	(date 1752545898068)
++++ b/.idea/misc.xml	(date 1752545898068)
+@@ -0,0 +1,7 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="Black">
++    <option name="sdkName" value="Python 3.13" />
++  </component>
++  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.13 virtualenv at C:\Users\MAINA\OneDrive - Strathmore University\Documents\GitHub\dsa-semester-project-ics-2025-waarmm\.venv" project-jdk-type="Python SDK" />
++</project>
+\ No newline at end of file
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+new file mode 100644
+--- /dev/null	(date 1752546019820)
++++ b/.idea/workspace.xml	(date 1752546019820)
+@@ -0,0 +1,146 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="AutoImportSettings">
++    <option name="autoReloadType" value="SELECTIVE" />
++  </component>
++  <component name="ChangeListManager">
++    <list default="true" id="6da4c55f-fb4f-4eae-9dc3-5aa2eb057291" name="Changes" comment="">
++      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/UI/GUI.py" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/database/stacks_db.py" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/ds/undo_redo_stack.py" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/main.py" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/stack/undo_redo_stack.py" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/stacks_db" afterDir="false" />
++      <change afterPath="$PROJECT_DIR$/src/tests/test_stack.py" afterDir="false" />
++    </list>
++    <option name="SHOW_DIALOG" value="false" />
++    <option name="HIGHLIGHT_CONFLICTS" value="true" />
++    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
++    <option name="LAST_RESOLUTION" value="IGNORE" />
++  </component>
++  <component name="FileTemplateManagerImpl">
++    <option name="RECENT_TEMPLATES">
++      <list>
++        <option value="Python Script" />
++      </list>
++    </option>
++  </component>
++  <component name="Git.Settings">
++    <option name="RECENT_BRANCH_BY_REPOSITORY">
++      <map>
++        <entry key="$PROJECT_DIR$" value="main" />
++      </map>
++    </option>
++    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
++  </component>
++  <component name="ProjectColorInfo">{
++  &quot;customColor&quot;: &quot;&quot;,
++  &quot;associatedIndex&quot;: 4
++}</component>
++  <component name="ProjectId" id="2zGoxlPWrvsljClajYj2xF9KGv4" />
++  <component name="ProjectViewState">
++    <option name="hideEmptyMiddlePackages" value="true" />
++    <option name="showLibraryContents" value="true" />
++  </component>
++  <component name="PropertiesComponent"><![CDATA[{
++  "keyToString": {
++    "ModuleVcsDetector.initialDetectionPerformed": "true",
++    "Python tests.Python tests for src.tests.test_stack.test_push_and_pop.executor": "Run",
++    "Python tests.Python tests in test_stack.py.executor": "Run",
++    "Python.GUI.executor": "Run",
++    "Python.priorityQueue.executor": "Run",
++    "Python.undo_redo_stack.executor": "Run",
++    "RunOnceActivity.ShowReadmeOnStart": "true",
++    "RunOnceActivity.git.unshallow": "true",
++    "git-widget-placeholder": "regNo__P190007__stack",
++    "node.js.detected.package.eslint": "true",
++    "node.js.detected.package.tslint": "true",
++    "node.js.selected.package.eslint": "(autodetect)",
++    "node.js.selected.package.tslint": "(autodetect)",
++    "nodejs_package_manager_path": "npm",
++    "vue.rearranger.settings.migration": "true"
++  }
++}]]></component>
++  <component name="RunManager" selected="Python.GUI">
++    <configuration name="GUI" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
++      <module name="dsa-semester-project-ics-2025-waarmm" />
++      <option name="ENV_FILES" value="" />
++      <option name="INTERPRETER_OPTIONS" value="" />
++      <option name="PARENT_ENVS" value="true" />
++      <envs>
++        <env name="PYTHONUNBUFFERED" value="1" />
++      </envs>
++      <option name="SDK_HOME" value="" />
++      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/src/UI" />
++      <option name="IS_MODULE_SDK" value="true" />
++      <option name="ADD_CONTENT_ROOTS" value="true" />
++      <option name="ADD_SOURCE_ROOTS" value="true" />
++      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
++      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/src/UI/GUI.py" />
++      <option name="PARAMETERS" value="" />
++      <option name="SHOW_COMMAND_LINE" value="false" />
++      <option name="EMULATE_TERMINAL" value="false" />
++      <option name="MODULE_MODE" value="false" />
++      <option name="REDIRECT_INPUT" value="false" />
++      <option name="INPUT_FILE" value="" />
++      <method v="2" />
++    </configuration>
++    <configuration name="Python tests for src.tests.test_stack.test_push_and_pop" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
++      <module name="dsa-semester-project-ics-2025-waarmm" />
++      <option name="ENV_FILES" value="" />
++      <option name="INTERPRETER_OPTIONS" value="" />
++      <option name="PARENT_ENVS" value="true" />
++      <option name="SDK_HOME" value="" />
++      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
++      <option name="IS_MODULE_SDK" value="true" />
++      <option name="ADD_CONTENT_ROOTS" value="true" />
++      <option name="ADD_SOURCE_ROOTS" value="true" />
++      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
++      <option name="_new_additionalArguments" value="&quot;&quot;" />
++      <option name="_new_target" value="&quot;src.tests.test_stack.test_push_and_pop&quot;" />
++      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
++      <method v="2" />
++    </configuration>
++    <recent_temporary>
++      <list>
++        <item itemvalue="Python tests.Python tests for src.tests.test_stack.test_push_and_pop" />
++        <item itemvalue="Python.GUI" />
++      </list>
++    </recent_temporary>
++  </component>
++  <component name="SharedIndexes">
++    <attachedChunks>
++      <set>
++        <option value="bundled-js-predefined-d6986cc7102b-09060db00ec0-JavaScript-PY-251.26927.74" />
++        <option value="bundled-python-sdk-657d8234b839-64d779b69b7a-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-251.26927.74" />
++      </set>
++    </attachedChunks>
++  </component>
++  <component name="TaskManager">
++    <task active="true" id="Default" summary="Default task">
++      <changelist id="6da4c55f-fb4f-4eae-9dc3-5aa2eb057291" name="Changes" comment="" />
++      <created>1751367024483</created>
++      <option name="number" value="Default" />
++      <option name="presentableId" value="Default" />
++      <updated>1751367024483</updated>
++      <workItem from="1751367026107" duration="1560000" />
++      <workItem from="1751373303132" duration="2588000" />
++      <workItem from="1752045706383" duration="934000" />
++    </task>
++    <servers />
++  </component>
++  <component name="TypeScriptGeneratedFilesManager">
++    <option name="version" value="3" />
++  </component>
++  <component name="com.intellij.coverage.CoverageDataManagerImpl">
++    <SUITE FILE_PATH="coverage/dsa_semester_project_ics_2025_waarmm$GUI.coverage" NAME="GUI Coverage Results" MODIFIED="1752544785058" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/UI" />
++    <SUITE FILE_PATH="coverage/dsa_semester_project_ics_2025_waarmm$undo_redo_stack.coverage" NAME="undo_redo_stack Coverage Results" MODIFIED="1752538599557" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/ds" />
++    <SUITE FILE_PATH="coverage/dsa_semester_project_ics_2025_waarmm$priorityQueue.coverage" NAME="priorityQueue Coverage Results" MODIFIED="1752538584806" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/ds" />
++    <SUITE FILE_PATH="coverage/dsa_semester_project_ics_2025_waarmm$.coverage" NAME=" Coverage Results" MODIFIED="1752544729606" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/tests" />
++  </component>
++</project>
+\ No newline at end of file
+Index: src/ds/undo_redo_stack.py
+===================================================================
+diff --git a/src/ds/undo_redo_stack.py b/src/ds/undo_redo_stack.py
+new file mode 100644
+--- /dev/null	(date 1752545898105)
++++ b/src/ds/undo_redo_stack.py	(date 1752545898105)
+@@ -0,0 +1,28 @@
++class Stack:
++    def __init__(self):
++        self.items = []
++
++    def is_empty(self):
++        return len(self.items) == 0
++
++    def push(self, item):
++        self.items.append(item)
++
++    def pop(self):
++        if self.is_empty():
++            raise Exception("Stack is empty")
++        return self.items.pop()
++
++    def peek(self):
++        if self.is_empty():
++            raise Exception("Stack is empty")
++        return self.items[-1]
++
++    def size(self):
++        return len(self.items)
++
++    def clear(self):
++        self.items = []
++
++    def __repr__(self):
++        return f"Stack({self.items})"
+\ No newline at end of file
+Index: .idea/vcs.xml
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+new file mode 100644
+--- /dev/null	(date 1752545898068)
++++ b/.idea/vcs.xml	(date 1752545898068)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="VcsDirectoryMappings">
++    <mapping directory="" vcs="Git" />
++  </component>
++</project>
+\ No newline at end of file
+Index: src/tests/test_stack.py
+===================================================================
+diff --git a/src/tests/test_stack.py b/src/tests/test_stack.py
+new file mode 100644
+--- /dev/null	(date 1752545898133)
++++ b/src/tests/test_stack.py	(date 1752545898133)
+@@ -0,0 +1,39 @@
++import sys
++import os
++import pytest
++from src.ds.undo_redo_stack import Stack
++
++@pytest.fixture
++def test_push_and_pop():
++    s = Stack()
++    s.push("A")
++    s.push("B")
++    assert s.pop() == "B"
++    assert s.pop() == "A"
++
++def test_peek():
++    s = Stack()
++    s.push("X")
++    assert s.peek() == "X"
++    s.push("Y")
++    assert s.peek() == "Y"
++
++def test_is_empty():
++    s = Stack()
++    assert s.is_empty()
++    s.push(1)
++    assert not s.is_empty()
++
++def test_clear():
++    s = Stack()
++    s.push(1)
++    s.push(2)
++    s.clear()
++    assert s.is_empty()
++
++def test_size():
++    s = Stack()
++    assert s.size() == 0
++    s.push(10)
++    s.push(20)
++    assert s.size() == 2
+\ No newline at end of file
+Index: src/UI/GUI.py
+===================================================================
+diff --git a/src/UI/GUI.py b/src/UI/GUI.py
+new file mode 100644
+--- /dev/null	(date 1752545898088)
++++ b/src/UI/GUI.py	(date 1752545898088)
+@@ -0,0 +1,121 @@
++import tkinter as tk
++from asyncio import current_task
++from tkinter import filedialog, messagebox
++from src.ds.undo_redo_stack import Stack
++from src.database.stacks_db import init_db, save_input, get_input, load_input
++
++class TextEditor:
++    def __init__(self, root):
++        self.root = root
++        self.root.title("Undo/Redo editor")
++
++        self.undo_stack = Stack()
++        self.redo_stack = Stack()
++
++        self.text_area = tk.Text(root, wrap="word", undo=False )
++        self.text_area.pack(expand=True, fill="both")
++
++        self.log = tk.listbox(root, height=5)
++        self.log.pack(fill="X")
++
++        self.add_buttons()
++
++        self.text_area.bind("<KeyRelease>", self.on_text_change)
++
++        self.undo_stack.push("")
++
++    def add_buttons(self):
++        frame = tk.Frame(self.root)
++        frame.pack()
++
++        tk.Button(frame, text="Undo", command=self.undo).pack(side="left", padx=5)
++        tk.Button(frame, text="Redo", command=self.redo).pack(side="left", padx=5)
++        tk.Button(frame, text="Save to DB", command=self.save_to_db).pack(side="left", padx=5)
++        tk.Button(frame, text="load from DB", command=self.load_from_db).pack(side="left", padx=5)
++        tk.Button(frame, text="Clear", command=self.clear).pack(side="left", padx=5)
++
++    def log_action(self, message):
++        self.log.insert("end", message)
++        self.log.yview("end")
++
++    def on_text_change(self, event=None):
++        current_text = self.text_area.get("1.0", "end-1c")
++
++        if self.undo_stack.peek() != current_text:
++            self.undo_stack.push(current_text)
++            self.redo_stack.clear()
++            self.log_action("Typed - stack updated")
++
++    def undo(self):
++        if self.undo_stack.size() > 1:
++            current_text = self.undo_stack.pop()
++            self.redo_stack.push(current_text)
++            self.text_area.delete("1.0", "end")
++            self.text_area.insert("1.0", self.undo_stack.peek())
++            self.log_action("Undo done")
++        else:
++            self.log_action("Nothing to undo")
++
++    def redo(self):
++        if not self.redo_stack.is_empty():
++            current_text = self.redo_stack.pop()
++            self.undo_stack.push(current_text)
++            self.text_area.delete("1.0", "end")
++            self.text_area.insert("1.0", current_text)
++            self.log_action("Redo done")
++        else:
++            self.log_action("Nothing to redo")
++
++    def save_to_db(self):
++        content = self.text_area.get("1.0", "end-1c")
++        title = tk.simpledialog.askstring("Name", "Enter a Name for this content!")
++        
++        if title:
++            save_input(title, content)
++            self.log_action("Saved to DB")
++            
++    def load_from_db(self):
++        input = get_input()
++        
++        if not input:
++            messagebox.showerror("Error", "No data saved yet")
++            return
++        
++        selection_window = tk.Toplevel(self.root)
++        selection_window.title("select a data file to open")
++        
++        listbox = tk.Listbox(selection_window, width=50)
++        listbox.pack(padx=10, pady=10)
++        
++        for data in input:
++            listbox.insert("end", f"{data[0]} - {data[1]} ({data[2][:19]})")
++            
++            
++    def open_selected_file(self, selection_window=None, listbox=None):
++        selection = listbox.curselection()
++        if selection:
++            selected = input[selection[0]]
++            content = load_input(selected[0])
++            self.text_area.delete("1.0", "end")
++            self.text_area.insert("1.0", content)
++            self.undo_stack.clear()
++            self.redo_stack.clear()
++            self.redo_stack.push(content)
++            self.log_action(f"Loaded data '{selected[1]}' from db")
++            selection_window.destroy()
++            
++        tk.Button(selection_window, text="Open", command=self.open_selected_file).pack(padx=5)
++
++    def clear(self):
++        self.text_area.delete("1.0", "end")
++        self.undo_stack.clear()
++        self.redo_stack.clear()
++        self.undo_stack.push("")
++        self.log_action("Cleared editor")
++
++
++if __name__ == "__main__":
++    init_db()
++    root = tk.Tk()
++    app = TextEditor(root)
++    root.mainloop()
+Index: .idea/inspectionProfiles/Project_Default.xml
+===================================================================
+diff --git a/.idea/inspectionProfiles/Project_Default.xml b/.idea/inspectionProfiles/Project_Default.xml
+new file mode 100644
+--- /dev/null	(date 1752545898066)
++++ b/.idea/inspectionProfiles/Project_Default.xml	(date 1752545898066)
+@@ -0,0 +1,12 @@
++<component name="InspectionProjectProfileManager">
++  <profile version="1.0">
++    <option name="myName" value="Project Default" />
++    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
++      <option name="ignoredIdentifiers">
++        <list>
++          <option value="list.*" />
++        </list>
++      </option>
++    </inspection_tool>
++  </profile>
++</component>
+\ No newline at end of file
+Index: .idea/inspectionProfiles/profiles_settings.xml
+===================================================================
+diff --git a/.idea/inspectionProfiles/profiles_settings.xml b/.idea/inspectionProfiles/profiles_settings.xml
+new file mode 100644
+--- /dev/null	(date 1752545898067)
++++ b/.idea/inspectionProfiles/profiles_settings.xml	(date 1752545898067)
+@@ -0,0 +1,6 @@
++<component name="InspectionProjectProfileManager">
++  <settings>
++    <option name="USE_PROJECT_PROFILE" value="false" />
++    <version value="1.0" />
++  </settings>
++</component>
+\ No newline at end of file
+Index: .idea/dataSources.xml
+===================================================================
+diff --git a/.idea/dataSources.xml b/.idea/dataSources.xml
+new file mode 100644
+--- /dev/null	(date 1752546019829)
++++ b/.idea/dataSources.xml	(date 1752546019829)
+@@ -0,0 +1,12 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
++    <data-source source="LOCAL" name="stacks_db" uuid="5733002f-0599-4ba9-afaa-f42ac169cb25">
++      <driver-ref>sqlite.xerial</driver-ref>
++      <synchronize>true</synchronize>
++      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
++      <jdbc-url>jdbc:sqlite:C:\Users\MAINA\OneDrive - Strathmore University\Documents\GitHub\dsa-semester-project-ics-2025-waarmm\src\stacks_db</jdbc-url>
++      <working-dir>$ProjectFileDir$</working-dir>
++    </data-source>
++  </component>
++</project>
+\ No newline at end of file

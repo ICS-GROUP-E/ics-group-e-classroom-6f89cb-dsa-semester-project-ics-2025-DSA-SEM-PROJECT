@@ -1,0 +1,15 @@
+Index: src/main.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from tkinter import Tk\r\nfrom src.ui.priorityQueueUI import MainWindow\r\nfrom src.database.priorityQueue_db_config import initialize_db\r\n\r\ndef main():\r\n    initialize_db()\r\n    root = Tk()\r\n    app = MainWindow(root)\r\n    root.mainloop()\r\n\r\nif __name__ == \"__main__\":\r\n    main()\r\n
+===================================================================
+diff --git a/src/main.py b/src/main.py
+--- a/src/main.py	(revision 0e174426fcdda8cf9e03b80a4136f41548d322dd)
++++ b/src/main.py	(date 1752546488656)
+@@ -1,5 +1,5 @@
+ from tkinter import Tk
+-from src.ui.priorityQueueUI import MainWindow
++from src.UI.priorityQueueUI import MainWindow
+ from src.database.priorityQueue_db_config import initialize_db
+ 
+ def main():
